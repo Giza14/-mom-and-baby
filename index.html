@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mom &amp; Baby Companion</title>
+<style>
+:root {
+  color-scheme: light; font-family: system-ui, sans-serif; color: #302a34;
+  background: #fbf7f3; --plum: #57354e; --line: #e6dadf;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 980px; margin: auto; padding: clamp(16px, 4vw, 40px); }
+header { background: linear-gradient(125deg, #f6dfe6, #f8eee4); border-radius: 24px; padding: clamp(24px, 6vw, 56px); }
+h1, h2 { font-family: Georgia, serif; font-weight: normal; color: var(--plum); }
+h1 { font-size: clamp(2.2rem, 7vw, 4rem); margin: 8px 0; line-height: 1.05; }
+h2 { font-size: 1.8rem; margin: 0 0 10px; }
+h3 { font-size: 1rem; margin: 0 0 8px; }
+p { line-height: 1.55; margin: 8px 0 16px; }
+small, .muted { color: #625660; }
+nav, .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+nav { margin: 20px 0; }
+button, input, select { font: inherit; }
+button, input, select { min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px; }
+button { cursor: pointer; background: #fff; color: var(--plum); font-weight: 650; }
+button[aria-current], .primary { background: var(--plum); color: #fff; border-color: var(--plum); }
+button:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid #805678; outline-offset: 3px; }
+input, select { background: white; max-width: 100%; }
+input[type=checkbox] { min-height: auto; width: 18px; height: 18px; accent-color: var(--plum); }
+form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+label.field { display: grid; gap: 5px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: clamp(15px, 3vw, 24px); min-width: 0; }
+.clock { font-size: clamp(2.4rem, 8vw, 3.9rem); font-weight: 650; font-variant-numeric: tabular-nums; margin: 8px 0; }
+label.check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+ul { padding-left: 21px; }
+li { padding: 5px 0; overflow-wrap: anywhere; }
+table { width: 100%; border-collapse: collapse; }
+caption { text-align: left; font-weight: 650; margin-bottom: 8px; }
+th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); }
+aside { background: #fff0e8; border: 1px solid #b86449; border-radius: 12px; padding: 12px; margin: 14px 0; }
+.reminder-box { background: #f4ffe8; border: 1px solid #6a9e3a; border-radius: 12px; padding: 12px; margin: 14px 0; }
+.info-box { background: #f7f1fa; border: 1px solid #c9b4d4; border-radius: 12px; padding: 12px; margin: 14px 0; }
+a { color: var(--plum); }
+footer { margin-top: 24px; }
+.danger { color: #9b2335; border-color: #d4949c; }
+.danger:hover { background: #fff5f6; }
+.entry-row { display: flex; align-items: flex-start; gap: 8px; border-bottom: 1px solid var(--line); padding: 8px 0; }
+.entry-row:last-child { border-bottom: none; }
+.entry-info { flex: 1; min-width: 0; font-size: 0.95rem; line-height: 1.5; }
+.entry-info .sub { color: #625660; font-size: 0.85rem; }
+.entry-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+.entry-actions button { min-height: 36px; padding: 4px 10px; font-size: 0.85rem; }
+.cal-note { font-size: 0.82rem; color: #625660; border-top: 1px solid var(--line); margin-top: 14px; padding-top: 10px; }
+#edit-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+#edit-modal { background: #fff; border-radius: 18px; padding: 24px; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 12px; }
+#edit-modal h3 { margin: 0 0 4px; color: var(--plum); font-family: Georgia, serif; font-size: 1.3rem; font-weight: normal; }
+#edit-modal label.field { width: 100%; }
+#edit-modal input, #edit-modal select { width: 100%; }
+#edit-modal .actions { justify-content: flex-end; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <small>Student prototype</small>
+  <h1>Mom &amp; Baby Companion</h1>
+  <p>Track vitamins, prenatal visits, hospital packing, contractions, and your baby's first days.</p>
+</header>
+<nav aria-label="Sections">
+  <button type="button" data-page="vitamins">Vitamins &amp; Wellness</button>
+  <button type="button" data-page="visits">Prenatal Visits</button>
+  <button type="button" data-page="prepare">Hospital Bag</button>
+  <button type="button" data-page="labor">Contractions</button>
+  <button type="button" data-page="baby">Baby Care</button>
+</nav>
+
+<!-- ── Vitamins & Wellness ── -->
+<section id="vitamins" class="grid" hidden>
+  <article class="card">
+    <h2>Vitamin reminders</h2>
+    <p class="muted">Add vitamins or supplements prescribed by your care team. Enter the schedule they gave you.</p>
+    <form id="vit-form">
+      <label class="field" style="flex:1 1 160px">Name<input id="vit-name" name="name" required maxlength="90" placeholder="Folic acid"></label>
+      <label class="field">Start date<input id="vit-date" name="date" type="date" required></label>
+      <label class="field">Time<input id="vit-time" name="time" type="time" required></label>
+      <label class="field">Repeat<select id="vit-repeat" name="repeat">
+        <option value="daily">Daily</option>
+        <option value="everyother">Every other day</option>
+        <option value="once">Once</option>
+      </select></label>
+      <button id="vit-submit">Add reminder</button>
+    </form>
+    <div id="vit-list" style="margin-top:14px"></div>
+    <div class="cal-note">After downloading a .ics file, open it in your Calendar app and save the event. If you later edit or delete a reminder here, also update or remove the old event in your Calendar.</div>
+  </article>
+  <article class="card">
+    <h2>Water reminders</h2>
+    <p class="muted">Choose one or more times of day to be reminded to drink water.</p>
+    <form id="water-form" style="align-items:end">
+      <label class="field">Time<input id="water-time" name="time" type="time" required></label>
+      <button id="water-submit">Add time</button>
+    </form>
+    <div id="water-list" style="margin-top:14px"></div>
+    <div class="cal-note">After downloading a .ics file, open it in your Calendar app and save the event. If you edit or remove a water reminder here, also update or remove the old event in Calendar.</div>
+  </article>
+  <article class="card">
+    <h2>Staying hydrated</h2>
+    <p>ACOG recommends around 8 to 12 cups (64 to 96 oz) of water per day during pregnancy. Drinks like milk and 100% juice count toward this goal.</p>
+    <p><a href="https://www.acog.org/womens-health/faqs/healthy-eating-during-pregnancy">ACOG: Healthy Eating During Pregnancy</a></p>
+    <h3>Foods during pregnancy</h3>
+    <p>Good choices include washed fruits and vegetables, whole grains like oats or brown rice, and fully cooked protein such as cooked meat, fish, eggs, and beans.</p>
+    <p>CDC advises avoiding undercooked meat or eggs, raw sprouts, and unpasteurized milk or cheese during pregnancy, as these carry a higher risk of foodborne illness.</p>
+    <p><a href="https://www.cdc.gov/food-safety/foods/pregnant-women.html">CDC: Food Safety for Pregnant Women</a></p>
+  </article>
+</section>
+
+<!-- ── Prenatal Visits ── -->
+<section id="visits" class="grid" hidden>
+  <article class="card">
+    <h2>Prenatal visits</h2>
+    <p class="muted">Add appointments with your care team. Saved visits appear below.</p>
+    <form id="visit-form">
+      <label class="field" style="flex:1 1 160px">Visit name<input id="visit-name" name="name" required maxlength="90" placeholder="8-week checkup"></label>
+      <label class="field">Date and time<input id="visit-when" name="when" type="datetime-local" required></label>
+      <label class="check" style="min-height:auto;margin-top:4px">
+        <input type="checkbox" id="visit-alert24" name="alert24">
+        <span>Remind me 24 hours before</span>
+      </label>
+      <button id="visit-submit">Add visit</button>
+    </form>
+    <div id="visit-list" style="margin-top:14px"></div>
+    <div class="cal-note">After downloading a .ics file, open it in your Calendar app and save the event. The visit alert will fire 24 hours before the appointment. If you edit or delete a visit here, also update or remove the old event in Calendar.</div>
+  </article>
+  <article class="card">
+    <h2>Notes for your visit</h2>
+    <p>Write down questions before you go so you don't forget them. Good topics to bring up include any new symptoms, your birth plan, and upcoming screening tests.</p>
+    <p>Ask your care team which tests are recommended at each stage and what results to expect. <a href="https://www.acog.org/womens-health/faqs/routine-tests-during-pregnancy">ACOG: Routine Tests During Pregnancy</a></p>
+    <h3>When to call your care team</h3>
+    <p>Call right away if you have heavy bleeding, severe stomach pain, signs of preeclampsia such as a sudden headache or vision changes, or reduced fetal movement.</p>
+  </article>
+</section>
+
+<!-- ── Hospital Bag ── -->
+<section id="prepare" class="grid" hidden>
+  <article class="card">
+    <h2>Hospital bag</h2>
+    <div id="bag"></div>
+    <form id="bag-form" style="margin-top:12px">
+      <label class="field">Add your own item<input name="bagitem" required maxlength="90"></label>
+      <button type="submit">Add item</button>
+    </form>
+  </article>
+  <article class="card">
+    <h2>What to pack</h2>
+    <p>Ask your hospital what they provide — many supply towels, pads, and nappies. You may need less than you think.</p>
+    <h3>For you</h3>
+    <p>Comfortable clothes for labor and recovery, toiletries, a phone charger, photo ID and insurance card, and your birth plan if you have one.</p>
+    <h3>For your baby</h3>
+    <p>An infant car seat installed before you leave, a going-home outfit, and a warm layer if the weather is cold.</p>
+    <h3>For your support person</h3>
+    <p>A change of clothes, snacks, and entertainment for the waiting time. A pillow or blanket can make a big difference if they're staying overnight — add these to your own list if you'd like to bring them.</p>
+    <p>
+      <a href="https://www.nhs.uk/best-start-in-life/pregnancy/preparing-for-labour-and-birth/hospital-bag-checklist/">Official hospital bag checklist — NHS</a><br>
+      <a href="https://www.reddit.com/r/BabyBumps/comments/1h5qnra/">What parents actually used — Reddit (personal experiences)</a>
+    </p>
+  </article>
+</section>
+
+<!-- ── Contractions ── -->
+<section id="labor" class="grid" hidden>
+  <article class="card">
+    <h2>Contraction timer</h2>
+    <p class="muted">Tap Start as a contraction begins and Stop when it ends.</p>
+    <div class="clock" id="contraction-clock" aria-label="Elapsed time">00:00</div>
+    <div class="actions">
+      <button class="primary" id="contraction-start">Start contraction</button>
+      <button id="contraction-stop">Stop contraction</button>
+      <button id="contraction-reset">Reset timer</button>
+      <button id="demo" aria-pressed="false">Try demo</button>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button id="end-tracking" class="danger">End tracking</button>
+      <button id="clear-contractions" class="danger">Clear history</button>
+    </div>
+    <p id="pattern" role="status"></p>
+    <table>
+      <caption id="contraction-caption">Recorded contractions</caption>
+      <thead><tr><th scope="col">Started</th><th scope="col">Duration</th><th scope="col">Start to start</th></tr></thead>
+      <tbody id="contraction-log"></tbody>
+    </table>
+  </article>
+  <article class="card">
+    <h2>Changes to share</h2>
+    <p>Record what you notice so you can describe it to your maternity care team.</p>
+    <div id="symptoms"></div>
+    <aside id="alert" role="alert" hidden>Contact your maternity care team now. Share what you noticed, even if you haven't timed any contractions.</aside>
+    <p>Follow the instructions given by your maternity care team. <a href="https://www.acog.org/womens-health/faqs/how-to-tell-when-labor-begins">ACOG guide to labor</a> · <a href="https://www.nhs.uk/pregnancy/labour-and-birth/signs-that-labour-has-begun/">NHS signs of labor</a></p>
+  </article>
+</section>
+
+<!-- ── Baby Care ── -->
+<section id="baby" class="grid" hidden>
+  <article class="card">
+    <h2>Feeding &amp; diaper log</h2>
+    <label class="field">Feeding method
+      <select id="method"><option>Nursing</option><option>Expressed milk</option><option>Formula</option></select>
+    </label>
+    <div class="clock" id="feeding-clock" aria-label="Feeding elapsed time">00:00</div>
+    <div class="actions">
+      <button class="primary" id="feeding-start">Start feeding</button>
+      <button id="feeding-stop">Stop &amp; save</button>
+      <button id="feeding-reset">Reset timer</button>
+      <button id="diaper">Log diaper</button>
+    </div>
+    <p id="last-feed"></p>
+    <div id="feeding-reminder-box" class="reminder-box" hidden role="status"></div>
+    <div style="margin:14px 0 10px">
+      <label class="check">
+        <input type="checkbox" id="reminder-enabled">
+        <span>In-app feeding reminder</span>
+      </label>
+      <div id="reminder-interval-row" style="margin-top:8px; display:none">
+        <label class="field">Remind me after
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="reminder-hours" min="0.5" max="12" step="0.5" style="width:90px">
+            <span>hours</span>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:4px">
+      <button id="clear-baby-log" class="danger">Clear baby log</button>
+    </div>
+    <ul id="baby-log"></ul>
+  </article>
+  <article class="card">
+    <h2>Newborn care</h2>
+    <h3>Feeding cues</h3>
+    <p>Bringing hands to the mouth or turning toward the breast or bottle can be an early sign of hunger. <a href="https://www.cdc.gov/infant-toddler-nutrition/mealtime/signs-your-child-is-hungry-or-full.html">CDC feeding cues</a></p>
+    <h3>Breastfeeding and formula</h3>
+    <p><a href="https://www.cdc.gov/infant-toddler-nutrition/breastfeeding/newborn-basics.html">CDC nursing basics</a> explains how to recognize effective feeding. <a href="https://www.cdc.gov/infant-toddler-nutrition/formula-feeding/">CDC formula guide</a> covers preparation and feeding. Your baby's care team can help tailor a feeding plan.</p>
+    <h3>First bath and cord care</h3>
+    <p>Use sponge baths until the umbilical cord stump falls off. <a href="https://www.healthychildren.org/English/ages-stages/baby/bathing-skin-care/Pages/Bathing-Your-Newborn.aspx">American Academy of Pediatrics bathing guide</a></p>
+  </article>
+</section>
+
+<footer><small>Records are kept in this browser when local storage is available.</small> <p id="storage-status" role="status"></p></footer>
+</main>
+
+<!-- Edit modal (shared) -->
+<div id="edit-modal-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="edit-modal-title">
+  <div id="edit-modal">
+    <h3 id="edit-modal-title">Edit</h3>
+    <div id="edit-modal-body"></div>
+    <div class="actions">
+      <button id="edit-cancel">Cancel</button>
+      <button id="edit-save" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<style>[hidden] { display: none !important; }</style>
+<script>
+'use strict';
+const byId = id => document.getElementById(id);
+
+// ── State ──────────────────────────────────────────────────────────────────────
+const KEY = 'mom-baby-companion-v1';
+
+// uid() must be defined before load() because load() calls it during migration
+let _uid = Date.now();
+function uid() { return String(++_uid); }
+
+const initial = {
+  bag: ['Photo ID and insurance card', 'Phone and charger', 'Comfortable clothes', "Baby's going-home outfit"].map(name => ({name, checked: false})),
+  // legacy: reminders array kept as prenatal visits
+  reminders: [],
+  // new visit records (edit/delete, alert24 flag)
+  visits: [],
+  vitamins: [],
+  waterTimes: [],
+  contractions: [],
+  baby: [],
+  symptoms: {},
+  contractionStart: null,
+  feeding: null,
+  reminderEnabled: false,
+  reminderHours: 3
+};
+function load() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(KEY));
+    if (!stored) return {...initial};
+    const merged = {...initial, ...stored};
+    // Migrate legacy reminders → visits (once, if visits is empty and reminders exist)
+    if (merged.visits.length === 0 && merged.reminders.length > 0) {
+      merged.visits = merged.reminders.map(r => ({id: uid(), name: r.title, when: r.when, alert24: false}));
+    }
+    return merged;
+  } catch {
+    return {...initial};
+  }
+}
+const state = load();
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    byId('storage-status').textContent = 'This browser could not save changes. Keep this tab open to retain these records.';
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function formatDuration(ms) {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  return [Math.floor(seconds / 60), seconds % 60].map(v => String(v).padStart(2, '0')).join(':');
+}
+const clockTime = time => new Date(time).toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', second: '2-digit'});
+
+function padZ(n) { return String(n).padStart(2, '0'); }
+
+// Format a Date to ICS local timestamp YYYYMMDDTHHMMSS (no Z — local time)
+function icsLocal(d) {
+  return d.getFullYear() + padZ(d.getMonth()+1) + padZ(d.getDate()) +
+    'T' + padZ(d.getHours()) + padZ(d.getMinutes()) + padZ(d.getSeconds());
+}
+
+// Format a Date to ICS UTC timestamp YYYYMMDDTHHMMSSZ
+function icsUtc(d) {
+  return d.getUTCFullYear() + padZ(d.getUTCMonth()+1) + padZ(d.getUTCDate()) +
+    'T' + padZ(d.getUTCHours()) + padZ(d.getUTCMinutes()) + padZ(d.getUTCSeconds()) + 'Z';
+}
+
+function icsEscape(s) {
+  return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+function htmlEsc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function downloadIcs(filename, content) {
+  const blob = new Blob([content], {type: 'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+// Build ICS for a vitamin or water reminder
+// repeat: 'daily' | 'everyother' | 'once'
+// alarmMinutes: minutes before event for VALARM (0 = at event time)
+function buildVitaminIcs(name, startDate, timeStr, repeat) {
+  // Parse date+time
+  const [h, m] = timeStr.split(':').map(Number);
+  const [yr, mo, dy] = startDate.split('-').map(Number);
+  const dtStart = new Date(yr, mo - 1, dy, h, m, 0);
+  const dtEnd = new Date(dtStart.getTime() + 60000); // 1 minute duration
+  const stamp = icsUtc(new Date());
+  const id = uid() + '@mom-baby';
+
+  let rrule = '';
+  if (repeat === 'daily') rrule = 'RRULE:FREQ=DAILY\r\n';
+  else if (repeat === 'everyother') rrule = 'RRULE:FREQ=DAILY;INTERVAL=2\r\n';
+
+  return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Mom & Baby Companion//EN\r\n' +
+    'BEGIN:VEVENT\r\n' +
+    'UID:' + id + '\r\n' +
+    'DTSTAMP:' + stamp + '\r\n' +
+    'DTSTART:' + icsLocal(dtStart) + '\r\n' +
+    'DTEND:' + icsLocal(dtEnd) + '\r\n' +
+    rrule +
+    'SUMMARY:' + icsEscape(name) + '\r\n' +
+    'BEGIN:VALARM\r\nTRIGGER:PT0S\r\nACTION:DISPLAY\r\nDESCRIPTION:' + icsEscape(name) + '\r\nEND:VALARM\r\n' +
+    'END:VEVENT\r\nEND:VCALENDAR\r\n';
+}
+
+// Build ICS for a prenatal visit; alarm is 24h before if alert24 is true
+function buildVisitIcs(name, whenMs, alert24) {
+  const dtStart = new Date(whenMs);
+  const dtEnd = new Date(whenMs + 3600000); // 1 hour
+  const stamp = icsUtc(new Date());
+  const id = uid() + '@mom-baby';
+  const alarm = alert24
+    ? 'BEGIN:VALARM\r\nTRIGGER:-PT24H\r\nACTION:DISPLAY\r\nDESCRIPTION:' + icsEscape(name + ' tomorrow') + '\r\nEND:VALARM\r\n'
+    : '';
+  return 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Mom & Baby Companion//EN\r\n' +
+    'BEGIN:VEVENT\r\n' +
+    'UID:' + id + '\r\n' +
+    'DTSTAMP:' + stamp + '\r\n' +
+    'DTSTART:' + icsLocal(dtStart) + '\r\n' +
+    'DTEND:' + icsLocal(dtEnd) + '\r\n' +
+    'SUMMARY:' + icsEscape(name) + '\r\n' +
+    alarm +
+    'END:VEVENT\r\nEND:VCALENDAR\r\n';
+}
+
+// ── Page switching ─────────────────────────────────────────────────────────────
+function switchPage(page) {
+  document.querySelectorAll('[data-page]').forEach(btn => {
+    const sel = btn.dataset.page === page;
+    byId(btn.dataset.page).hidden = !sel;
+    if (sel) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
+  });
+}
+document.querySelectorAll('[data-page]').forEach(btn => btn.onclick = () => switchPage(btn.dataset.page));
+
+// ── Edit modal ─────────────────────────────────────────────────────────────────
+let _editResolve = null;
+function openEditModal(title, bodyHTML) {
+  return new Promise(resolve => {
+    _editResolve = resolve;
+    byId('edit-modal-title').textContent = title;
+    byId('edit-modal-body').innerHTML = bodyHTML;
+    byId('edit-modal-overlay').hidden = false;
+    const first = byId('edit-modal-body').querySelector('input, select');
+    if (first) first.focus();
+  });
+}
+byId('edit-cancel').onclick = () => {
+  byId('edit-modal-overlay').hidden = true;
+  if (_editResolve) { _editResolve(null); _editResolve = null; }
+};
+byId('edit-save').onclick = () => {
+  const body = byId('edit-modal-body');
+  const result = {};
+  body.querySelectorAll('[name]').forEach(el => {
+    result[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  byId('edit-modal-overlay').hidden = true;
+  if (_editResolve) { _editResolve(result); _editResolve = null; }
+};
+byId('edit-modal-overlay').onclick = e => { if (e.target === byId('edit-modal-overlay')) byId('edit-cancel').click(); };
+
+// ── Hospital Bag ──────────────────────────────────────────────────────────────
+function renderBag() {
+  // Migrate existing items that have no id
+  let bagNeedsSave = false;
+  state.bag.forEach(item => { if (!item.id) { item.id = uid(); bagNeedsSave = true; } });
+  if (bagNeedsSave) save();
+
+  byId('bag').replaceChildren(...state.bag.map(item => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = item.checked;
+    checkbox.style.cssText = 'width:18px;height:18px;accent-color:var(--plum);flex-shrink:0;min-height:auto';
+    checkbox.setAttribute('aria-label', item.name);
+    checkbox.onchange = () => { item.checked = checkbox.checked; save(); };
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = item.name;
+    nameSpan.style.cssText = 'flex:1;min-width:0;overflow-wrap:anywhere';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.textContent = 'Edit';
+    editBtn.style.cssText = 'min-height:32px;padding:3px 10px;font-size:0.85rem';
+    editBtn.onclick = async () => {
+      const result = await openEditModal('Rename item',
+        '<label class="field" style="width:100%">Item name' +
+        '<input name="itemname" required maxlength="90" value="' + htmlEsc(item.name) + '"></label>'
+      );
+      if (!result || !result.itemname.trim()) return;
+      item.name = result.itemname.trim();
+      save(); renderBag();
+    };
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.cssText = 'min-height:32px;padding:3px 10px;font-size:0.85rem';
+    removeBtn.className = 'danger';
+    removeBtn.onclick = () => {
+      state.bag = state.bag.filter(b => b.id !== item.id);
+      save(); renderBag();
+    };
+
+    row.append(checkbox, nameSpan, editBtn, removeBtn);
+    return row;
+  }));
+}
+byId('bag-form').onsubmit = e => {
+  e.preventDefault();
+  const item = e.currentTarget.elements['bagitem'].value.trim();
+  if (!item) return;
+  state.bag.push({id: uid(), name: item, checked: false});
+  save(); renderBag(); e.currentTarget.reset();
+};
+
+// ── Vitamins ──────────────────────────────────────────────────────────────────
+function repeatLabel(r) {
+  return r === 'daily' ? 'Daily' : r === 'everyother' ? 'Every other day' : 'Once';
+}
+function renderVitamins() {
+  const container = byId('vit-list');
+  if (!state.vitamins.length) {
+    container.innerHTML = '<p class="muted" style="margin:8px 0">No vitamin reminders saved yet.</p>';
+    return;
+  }
+  container.replaceChildren(...state.vitamins.map(v => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    const info = document.createElement('div');
+    info.className = 'entry-info';
+    info.innerHTML = '<strong>' + htmlEsc(v.name) + '</strong>' +
+      '<div class="sub">' + v.date + ' at ' + v.time + ' &middot; ' + repeatLabel(v.repeat) + '</div>';
+    const acts = document.createElement('div');
+    acts.className = 'entry-actions';
+
+    const calBtn = document.createElement('button');
+    calBtn.type = 'button';
+    calBtn.textContent = 'Add to Calendar';
+    calBtn.onclick = () => {
+      downloadIcs(v.name.replace(/\s+/g, '_') + '.ics', buildVitaminIcs(v.name, v.date, v.time, v.repeat));
+    };
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = async () => {
+      const result = await openEditModal('Edit vitamin reminder',
+        '<label class="field" style="width:100%">Name<input name="name" required maxlength="90" value="' + htmlEsc(v.name) + '"></label>' +
+        '<label class="field" style="width:100%;margin-top:8px">Start date<input name="date" type="date" required value="' + v.date + '"></label>' +
+        '<label class="field" style="width:100%;margin-top:8px">Time<input name="time" type="time" required value="' + v.time + '"></label>' +
+        '<label class="field" style="width:100%;margin-top:8px">Repeat<select name="repeat">' +
+          ['daily','everyother','once'].map(opt => '<option value="' + opt + '"' + (v.repeat===opt?' selected':'') + '>' + repeatLabel(opt) + '</option>').join('') +
+        '</select></label>' +
+        '<p style="margin:10px 0 0;font-size:.82rem;color:#625660">If you changed this reminder, also update or remove the old event in your Calendar app.</p>'
+      );
+      if (!result || !result.name.trim() || !result.date || !result.time) return;
+      v.name = result.name.trim(); v.date = result.date; v.time = result.time; v.repeat = result.repeat;
+      save(); renderVitamins();
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    delBtn.className = 'danger';
+    delBtn.onclick = () => {
+      if (!confirm('Delete the reminder for "' + v.name + '"? Also remove it from your Calendar app if you exported it.')) return;
+      state.vitamins = state.vitamins.filter(x => x.id !== v.id);
+      save(); renderVitamins();
+    };
+
+    acts.append(calBtn, editBtn, delBtn);
+    row.append(info, acts);
+    return row;
+  }));
+}
+byId('vit-form').onsubmit = e => {
+  e.preventDefault();
+  const els = e.currentTarget.elements;
+  const name = els.name.value.trim();
+  if (!name || !els.date.value || !els.time.value) return;
+  state.vitamins.push({id: uid(), name, date: els.date.value, time: els.time.value, repeat: els.repeat.value});
+  save(); renderVitamins(); e.currentTarget.reset();
+};
+
+// ── Water reminders ───────────────────────────────────────────────────────────
+function renderWater() {
+  const container = byId('water-list');
+  if (!state.waterTimes.length) {
+    container.innerHTML = '<p class="muted" style="margin:8px 0">No water reminders saved yet.</p>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  container.replaceChildren(...state.waterTimes.slice().sort((a,b)=>a.time.localeCompare(b.time)).map(w => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    const info = document.createElement('div');
+    info.className = 'entry-info';
+    info.innerHTML = '<strong>Drink water</strong><div class="sub">' + w.time + ' daily</div>';
+    const acts = document.createElement('div');
+    acts.className = 'entry-actions';
+
+    const calBtn = document.createElement('button');
+    calBtn.type = 'button';
+    calBtn.textContent = 'Add to Calendar';
+    calBtn.onclick = () => {
+      downloadIcs('Water_reminder_' + w.time.replace(':','') + '.ics', buildVitaminIcs('Drink water', today, w.time, 'daily'));
+    };
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.textContent = 'Edit time';
+    editBtn.onclick = async () => {
+      const result = await openEditModal('Edit water reminder time',
+        '<label class="field" style="width:100%">Time<input name="time" type="time" required value="' + w.time + '"></label>' +
+        '<p style="margin:10px 0 0;font-size:.82rem;color:#625660">If you changed this reminder, also update or remove the old event in your Calendar app.</p>'
+      );
+      if (!result || !result.time) return;
+      w.time = result.time;
+      save(); renderWater();
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    delBtn.className = 'danger';
+    delBtn.onclick = () => {
+      if (!confirm('Delete the water reminder at ' + w.time + '? Also remove it from your Calendar if you exported it.')) return;
+      state.waterTimes = state.waterTimes.filter(x => x.id !== w.id);
+      save(); renderWater();
+    };
+
+    acts.append(calBtn, editBtn, delBtn);
+    row.append(info, acts);
+    return row;
+  }));
+}
+byId('water-form').onsubmit = e => {
+  e.preventDefault();
+  const time = byId('water-time').value;
+  if (!time) return;
+  if (state.waterTimes.some(w => w.time === time)) {
+    alert('A water reminder at ' + time + ' already exists.');
+    return;
+  }
+  state.waterTimes.push({id: uid(), time});
+  save(); renderWater(); e.currentTarget.reset();
+};
+
+// ── Prenatal Visits ───────────────────────────────────────────────────────────
+function renderVisits() {
+  const container = byId('visit-list');
+  const now = Date.now();
+  if (!state.visits.length) {
+    container.innerHTML = '<p class="muted" style="margin:8px 0">No visits saved yet.</p>';
+    return;
+  }
+  container.replaceChildren(...state.visits.slice().sort((a,b)=>a.when-b.when).map(v => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    const info = document.createElement('div');
+    info.className = 'entry-info';
+    const passed = v.when < now;
+    const soon = !passed && (v.when - now) <= 86400000;
+    const sub = new Date(v.when).toLocaleString() +
+      (passed ? ' · time passed' : soon ? ' · within 24 hours' : '') +
+      (v.alert24 ? ' · 24h alert' : '');
+    info.innerHTML = '<strong>' + htmlEsc(v.name) + '</strong><div class="sub">' + htmlEsc(sub) + '</div>';
+
+    const acts = document.createElement('div');
+    acts.className = 'entry-actions';
+
+    const calBtn = document.createElement('button');
+    calBtn.type = 'button';
+    calBtn.textContent = 'Add to Calendar';
+    calBtn.onclick = () => {
+      downloadIcs(v.name.replace(/\s+/g, '_') + '.ics', buildVisitIcs(v.name, v.when, v.alert24));
+    };
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = async () => {
+      const dtLocal = new Date(v.when - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
+      const result = await openEditModal('Edit prenatal visit',
+        '<label class="field" style="width:100%">Visit name<input name="name" required maxlength="90" value="' + htmlEsc(v.name) + '"></label>' +
+        '<label class="field" style="width:100%;margin-top:8px">Date and time<input name="when" type="datetime-local" required value="' + dtLocal + '"></label>' +
+        '<label class="check" style="margin-top:8px"><input type="checkbox" name="alert24"' + (v.alert24?' checked':'') + '><span>Remind me 24 hours before</span></label>' +
+        '<p style="margin:10px 0 0;font-size:.82rem;color:#625660">If you changed this visit, also update or remove the old event in your Calendar app.</p>'
+      );
+      if (!result || !result.name.trim() || !result.when) return;
+      const t = new Date(result.when).getTime();
+      if (!Number.isFinite(t)) return;
+      v.name = result.name.trim(); v.when = t; v.alert24 = Boolean(result.alert24);
+      save(); renderVisits();
+    };
+
+    const doneBtn = document.createElement('button');
+    doneBtn.type = 'button';
+    doneBtn.textContent = 'Mark done';
+    doneBtn.onclick = () => {
+      if (!confirm('Remove "' + v.name + '" from your list?')) return;
+      state.visits = state.visits.filter(x => x.id !== v.id);
+      save(); renderVisits();
+    };
+
+    acts.append(calBtn, editBtn, doneBtn);
+    row.append(info, acts);
+    return row;
+  }));
+}
+byId('visit-form').onsubmit = e => {
+  e.preventDefault();
+  const els = e.currentTarget.elements;
+  const name = els.name.value.trim();
+  const t = new Date(els.when.value).getTime();
+  if (!name || !Number.isFinite(t)) return;
+  state.visits.push({id: uid(), name, when: t, alert24: els.alert24.checked});
+  save(); renderVisits(); e.currentTarget.reset();
+};
+
+// ── Contractions ──────────────────────────────────────────────────────────────
+let demoRecords = null;
+function renderContractions() {
+  const entries = demoRecords ?? state.contractions;
+  const intervals = entries.slice(1).map((entry, index) => entry.start - entries[index].start);
+  const recent = intervals.slice(-3);
+  const shortening = recent.length === 3 && recent[0] > recent[1] && recent[1] > recent[2];
+  byId('pattern').textContent = shortening ? 'The last three recorded intervals have shortened.' : '';
+  byId('contraction-caption').textContent = demoRecords ? 'Demo · fictional records' : 'Recorded contractions';
+  byId('demo').textContent = demoRecords ? 'End demo' : 'Try demo';
+  byId('demo').setAttribute('aria-pressed', String(Boolean(demoRecords)));
+  byId('contraction-start').disabled = Boolean(demoRecords) || state.contractionStart !== null;
+  byId('contraction-stop').disabled = state.contractionStart === null;
+  byId('contraction-reset').disabled = state.contractionStart === null;
+  byId('demo').disabled = state.contractionStart !== null;
+  const rows = entries.map((entry, index) => {
+    const row = document.createElement('tr');
+    [clockTime(entry.start), formatDuration(entry.duration), index ? formatDuration(intervals[index - 1]) : '—'].forEach(value => {
+      row.insertCell().textContent = value;
+    });
+    return row;
+  });
+  byId('contraction-log').replaceChildren(...rows.reverse());
+}
+byId('contraction-start').onclick = () => {
+  state.contractionStart = Date.now();
+  save(); renderContractions(); updateClocks();
+};
+byId('contraction-stop').onclick = () => {
+  const start = state.contractionStart;
+  if (start === null) return;
+  state.contractions.push({start, duration: Math.max(0, Date.now() - start)});
+  state.contractionStart = null;
+  save(); renderContractions(); updateClocks();
+};
+byId('contraction-reset').onclick = () => {
+  state.contractionStart = null;
+  save(); renderContractions(); updateClocks();
+};
+byId('demo').onclick = () => {
+  const base = new Date(2026, 0, 1, 14).getTime();
+  demoRecords = demoRecords ? null : [0, 8, 14, 18].map((minutes, index) => ({
+    start: base + minutes * 60000, duration: (35 + index * 6) * 1000
+  }));
+  renderContractions();
+};
+byId('end-tracking').onclick = () => {
+  state.contractionStart = null;
+  demoRecords = null;
+  save(); renderContractions(); updateClocks();
+};
+byId('clear-contractions').onclick = () => {
+  if (!confirm('Delete all recorded contractions? This cannot be undone.')) return;
+  state.contractions = [];
+  save(); renderContractions();
+};
+
+// ── Symptoms ──────────────────────────────────────────────────────────────────
+function renderAlert() {
+  byId('alert').hidden = !Object.values(state.symptoms).some(value => value === 'Yes' || value === 'Not sure');
+}
+const questions = {
+  water: 'Has your water broken?',
+  bleeding: 'Are you experiencing vaginal bleeding?',
+  movement: 'Is your baby moving less than usual?'
+};
+for (const [name, question] of Object.entries(questions)) {
+  const label = document.createElement('label');
+  label.className = 'field';
+  label.style.marginBottom = '12px';
+  const select = document.createElement('select');
+  select.id = name;
+  ['Select an answer', 'Yes', 'No', 'Not sure'].forEach((answer, index) => select.add(new Option(answer, index ? answer : '')));
+  select.value = state.symptoms[name] || '';
+  select.onchange = () => { state.symptoms[name] = select.value; save(); renderAlert(); };
+  label.append(document.createTextNode(question), select);
+  byId('symptoms').append(label);
+}
+
+// ── Baby care ─────────────────────────────────────────────────────────────────
+let reminderFiredForEnd = null;
+
+function renderBabyReminderSettings() {
+  const enabled = state.reminderEnabled;
+  byId('reminder-enabled').checked = enabled;
+  byId('reminder-interval-row').style.display = enabled ? '' : 'none';
+  byId('reminder-hours').value = state.reminderHours;
+}
+byId('reminder-enabled').onchange = () => {
+  state.reminderEnabled = byId('reminder-enabled').checked;
+  save(); renderBabyReminderSettings();
+};
+byId('reminder-hours').oninput = () => {
+  const val = parseFloat(byId('reminder-hours').value);
+  if (val >= 0.5 && val <= 12) { state.reminderHours = val; save(); }
+};
+
+function renderBaby() {
+  byId('feeding-start').disabled = Boolean(state.feeding);
+  byId('feeding-stop').disabled = !state.feeding;
+  byId('feeding-reset').disabled = !state.feeding;
+  byId('method').disabled = Boolean(state.feeding);
+  if (state.feeding) byId('method').value = state.feeding.method;
+  // Ensure every entry has a stable id (migrates existing entries that lack one)
+  let needsSave = false;
+  state.baby.forEach(entry => { if (!entry.id) { entry.id = uid(); needsSave = true; } });
+  if (needsSave) save();
+  byId('baby-log').replaceChildren(...state.baby.slice().reverse().map(entry => {
+    const row = document.createElement('li');
+    row.style.display = 'flex';
+    row.style.alignItems = 'baseline';
+    row.style.gap = '6px';
+    const text = document.createTextNode(
+      entry.label + ' · ' + clockTime(entry.time) +
+      (entry.duration == null ? '' : ' · ' + formatDuration(entry.duration))
+    );
+    row.append(text);
+    if (entry.label === 'Diaper change') {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = '−';
+      removeBtn.setAttribute('aria-label', 'Remove this diaper entry');
+      removeBtn.style.cssText = 'min-height:24px;height:24px;width:24px;padding:0;font-size:1rem;line-height:1;border-radius:6px;flex-shrink:0';
+      removeBtn.onclick = () => {
+        state.baby = state.baby.filter(e => e.id !== entry.id);
+        save(); renderBaby(); updateClocks();
+      };
+      row.append(removeBtn);
+    }
+    return row;
+  }));
+}
+byId('feeding-start').onclick = () => {
+  state.feeding = {start: Date.now(), method: byId('method').value};
+  save(); renderBaby(); updateClocks();
+};
+byId('feeding-stop').onclick = () => {
+  if (!state.feeding) return;
+  const {start, method} = state.feeding;
+  const now = Date.now();
+  state.baby.push({label: method, time: start, ended: now, duration: Math.max(0, now - start)});
+  state.feeding = null;
+  reminderFiredForEnd = null;
+  save(); renderBaby(); updateClocks();
+};
+byId('feeding-reset').onclick = () => {
+  state.feeding = null;
+  save(); renderBaby(); updateClocks();
+};
+byId('diaper').onclick = () => {
+  state.baby.push({id: uid(), label: 'Diaper change', time: Date.now()});
+  save(); renderBaby();
+};
+byId('clear-baby-log').onclick = () => {
+  if (!confirm('Delete all baby log entries? This cannot be undone.')) return;
+  state.baby = [];
+  state.feeding = null;
+  reminderFiredForEnd = null;
+  byId('feeding-reminder-box').hidden = true;
+  save(); renderBaby(); updateClocks();
+};
+
+// ── Clocks + feeding reminder tick ───────────────────────────────────────────
+function updateClocks() {
+  const now = Date.now();
+  byId('contraction-clock').textContent = formatDuration(now - (state.contractionStart ?? now));
+  byId('feeding-clock').textContent = formatDuration(now - (state.feeding?.start ?? now));
+
+  let lastFeed = null;
+  for (let i = state.baby.length - 1; i >= 0; i--) {
+    if (state.baby[i].ended != null) { lastFeed = state.baby[i]; break; }
+  }
+  byId('last-feed').textContent = lastFeed
+    ? 'Time since last feeding ended: ' + formatDuration(now - lastFeed.ended)
+    : 'No feedings logged yet.';
+
+  if (state.reminderEnabled && lastFeed) {
+    const thresholdMs = state.reminderHours * 3600000;
+    const elapsed = now - lastFeed.ended;
+    const box = byId('feeding-reminder-box');
+    if (elapsed >= thresholdMs && reminderFiredForEnd !== lastFeed.ended) {
+      reminderFiredForEnd = lastFeed.ended;
+      const h = state.reminderHours;
+      const lbl = Number.isInteger(h) ? h + ' hour' + (h === 1 ? '' : 's') : h + ' hours';
+      box.textContent = "It's been " + lbl + " since the last logged feeding.";
+      box.hidden = false;
+    }
+  } else {
+    byId('feeding-reminder-box').hidden = true;
+  }
+}
+
+// ── Planner poll (visits) ─────────────────────────────────────────────────────
+function pollVisits() { renderVisits(); }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+switchPage('vitamins');
+renderBag();
+renderVitamins();
+renderWater();
+renderVisits();
+renderContractions();
+renderAlert();
+renderBaby();
+renderBabyReminderSettings();
+updateClocks();
+setInterval(updateClocks, 250);
+setInterval(pollVisits, 30000);
+</script>
+</body>
+</html>
